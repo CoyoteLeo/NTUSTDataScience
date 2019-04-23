@@ -10,7 +10,8 @@ NTUST Introduction to Data Science
 |willy142857|B10532030|楊博惟|
 
 # dataset
-https://l.facebook.com/l.php?u=https%3A%2F%2Fwww.kaggle.com%2Fkarangadiya%2Ffifa19%3Ffbclid%3DIwAR0TYLwBuAZFht08lvUcxOumBgi77xBGpHENZDeMKHd_aenXA3zcIsV2QjY&h=AT2xZ7cdSX0aq24MwEplGYXgSM7xmasBrPEYNKd84RtY0ifqTLiwb_w1sl_Pufy6jf1Dye1eawHARprzdmmo5KyPqkqpQxASY3GjABXsELS8hmEss8_ChTuuuLVSQAB0okSx3w
+* [fifa 19](https://www.kaggle.com/karangadiya/fifa19)
+* [fifa 18](https://www.kaggle.com/thec03u5/fifa-18-demo-player-dataset)
 
 # environment
 python 3.6+
