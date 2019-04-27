@@ -62,7 +62,7 @@ train.to_csv('train.csv')
 # 讀取data
 train = pd.read_csv('train.csv', encoding = "ISO-8859-1")
 x_data = train.drop(['Wage', 'Value'], axis = 1).values
-minmax_scale = preprocessing.MinMaxScaler(feature_range = (0.0, 1.0))
+minmax_scale = preprocessing.MinMaxScaler(feature_range = (0, 1)) # 正規畫
 x_normal = minmax_scale.fit_transform(x_data)
 
 wage = train['Wage'].values
@@ -72,14 +72,12 @@ value = train['Value'].values
 model = Sequential()
 model.add(Dense(1024, input_shape=(x_normal.shape[1], )))
 model.add(Activation('relu'))
-model.add(Dense(4096)) 
-model.add(Activation('relu'))
 model.add(Dense(1024)) 
 model.add(Activation('relu'))
-model.add(Dense(1, activation='relu')) 
+model.add(Dense(1))
     
 model.compile(optimizer='adam',
-                loss='logcosh')
+                loss='mse')
 
 model.summary()
 save_model_path = 'model.h5'
