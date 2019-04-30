@@ -63,22 +63,3 @@ for all_id in range(0, 17981): #0~17980個球員
 df.to_csv('Result.csv')
 f.close()
 print("Done")
-
-
-# In[ ]:
-
-
-
-
-
-# In[3]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
