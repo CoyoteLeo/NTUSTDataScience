@@ -1,14 +1,12 @@
-def main():
-    # 讀取data
-    train = pd.read_csv('train.csv', encoding="ISO-8859-1")
-    x_data = train.drop(['Wage', 'Value'], axis=1).values
-    minmax_scale = preprocessing.MinMaxScaler(feature_range=(0, 1))  # 正規畫
-    x_normal = minmax_scale.fit_transform(x_data)
+import preprocessing
 
-    wage = train['Wage'].values
-    value = train['Value'].values
+from keras import optimizers
+from keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
+from keras.layers import Activation, BatchNormalization, Conv1D, CuDNNGRU, Dense, Dropout, Embedding, Flatten, Input, MaxPooling1D
+from keras.models import Sequential
+from sklearn import preprocessing
 
-    # 兜model
+def Model():
     model = Sequential()
     model.add(Dense(1024, input_shape=(x_normal.shape[1],)))
     model.add(Activation('relu'))
@@ -18,8 +16,26 @@ def main():
 
     model.compile(optimizer='adam',
                   loss='mse')
+    return model
 
+def loadData():
+    train = pd.read_csv('train.csv', encoding="ISO-8859-1")
+    x_data = train.drop(['Wage', 'Value'], axis=1).values
+    minmax_scale = preprocessing.MinMaxScaler(feature_range=(0, 1))  # Normalize
+    x_normal = minmax_scale.fit_transform(x_data)
+
+    wage = train['Wage'].values
+    value = train['Value'].values
+
+    return x_normal, wage, value
+
+def main():
+
+    train, wage, value = loadData()
+
+    model = Model()
     model.summary()
+
     save_model_path = 'model.h5'
     checkpoint = ModelCheckpoint(filepath=save_model_path,
                                  monitor='val_loss',
@@ -34,7 +50,7 @@ def main():
                                    patience=10,
                                    verbose=1)
 
-    history = model.fit(x=x_normal, y=wage, batch_size=128, epochs=1000, validation_split=0.1,
+    history = model.fit(x=train, y=wage, batch_size=128, epochs=1000, validation_split=0.1,
                         callbacks=[checkpoint, reduce_lr, early_stopping])
 
 

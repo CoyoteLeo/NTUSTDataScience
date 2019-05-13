@@ -1,11 +1,5 @@
 import numpy as np
 import pandas as pd
-from keras import optimizers
-from keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
-from keras.layers import Activation, BatchNormalization, Conv1D, CuDNNGRU, Dense, Dropout, Embedding, Flatten, Input, \
-    MaxPooling1D
-from keras.models import Sequential
-from sklearn import preprocessing
 
 
 # 計算分數中的+號
@@ -29,21 +23,22 @@ def stripMonth(x):
             temp.append(i)
     return np.array(temp)
 
-
-# preprocessing
-def preprocess_player_data():
+def process_lable_data():
     # 讀取薪資、市場價值的data, 並去掉錢幣符號
     csv = pd.read_csv('CompleteDataset2019.csv')
     wage = csv.loc[:, ['ID', 'Wage']].set_index('ID')
-    wage['Wage'] = wage['Wage'].map(
-        lambda x: float(x.strip('€K ')) * 1000 if 'K' in x else (float(x.strip('€M ')) * 100000) if 'M' in x else (
-            x.strip('€ ')))
+    wage['Wage'] = wage['Wage'].map(lambda x: float(x.strip('€K ')) * 1000 if 'K' in x else (float(x.strip('€M ')) * 100000) if 'M' in x else (x.strip('€ ')))
     # print(wage)
     value = csv.loc[:, ['ID', 'Value']].set_index('ID')
-    value = value['Value'].map(
-        lambda x: float(x.strip('€K ')) * 1000 if 'K' in x else (float(x.strip('€M ')) * 100000) if 'M' in x else (
-            x.strip('€ ')))
+    value = value['Value'].map(lambda x: float(x.strip('€K ')) * 1000 if 'K' in x else (float(x.strip('€M ')) * 100000) if 'M' in x else (x.strip('€ ')))
     label = pd.concat([wage, value], axis=1)
+
+    return label
+    
+
+# preprocessing
+def preprocess_player_data():
+
 
     # 讀取屬性資料
     csv = pd.read_csv('CompleteDataset.csv', encoding="ISO-8859-1")
@@ -62,11 +57,16 @@ def preprocess_player_data():
     df18 = pd.concat([temp, prefer], axis=1)
     df18_OneHot = pd.get_dummies(data=df18, columns=['Nationality', 'Club', ])
     df18_int = df18_OneHot.apply(lambda x: stripMonth(x)).set_index('ID')
-    train = pd.merge(label, df18_int, on=['ID'])
 
-    # 存data
-    train.to_csv('train.csv')
+    return df18_int
+    
 
+def preprocess():
+    train = preprocess_player_data()
+    label = process_lable_data()
+    res = pd.merge(label, train, on=['ID'])
+    res.to_csv('train.csv')
+    return res
 
 if __name__ == '__main__':
-    preprocess_player_data()
+    preprocess()
