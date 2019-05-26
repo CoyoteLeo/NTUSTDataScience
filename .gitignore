@@ -502,3 +502,4 @@ venv.bak/
 .mypy_cache/
 
 *.csv
+*web*

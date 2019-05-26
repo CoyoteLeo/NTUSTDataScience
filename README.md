@@ -26,3 +26,8 @@ if you pip install any module, please update the requirements.txt via the comman
 ```bash
 $ pip freeze > requirements.txt
 ```
+
+# Data
+- 金錢單位: 千元歐元
+- 重量單位: 磅
+- 長度單位: 英吋

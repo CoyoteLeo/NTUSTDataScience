@@ -1,72 +1,75 @@
-import numpy as np
 import pandas as pd
 
 
-# 計算分數中的+號
-def score(x):
-    temp = []
-    for i in x:
-        if isinstance(i, str) and '+' in i:
-            temp.append(sum(map(int, i.split('+'))))
-        else:
-            temp.append(i)
-    return np.array(temp)
+def transform_money(x: str):
+    if not isinstance(x, str):
+        return x
+    x = x.strip("€")
+    if x.endswith('M'):
+        x = float(x.strip('M')) * 1000
+    elif x.endswith('K'):
+        x = float(x.strip('K'))
+    else:
+        x = float(x)
+    return x
 
 
-# 把'month-'去掉
-def stripMonth(x):
-    temp = []
-    for i in x:
-        if isinstance(i, str):
-            temp.append(int(''.join(c for c in i if c.isdigit())))
-        else:
-            temp.append(i)
-    return np.array(temp)
-
-def process_lable_data():
-    # 讀取薪資、市場價值的data, 並去掉錢幣符號
-    csv = pd.read_csv('CompleteDataset2019.csv')
-    wage = csv.loc[:, ['ID', 'Wage']].set_index('ID')
-    wage['Wage'] = wage['Wage'].map(lambda x: float(x.strip('€K ')) * 1000 if 'K' in x else (float(x.strip('€M ')) * 100000) if 'M' in x else (x.strip('€ ')))
-    # print(wage)
-    value = csv.loc[:, ['ID', 'Value']].set_index('ID')
-    value = value['Value'].map(lambda x: float(x.strip('€K ')) * 1000 if 'K' in x else (float(x.strip('€M ')) * 100000) if 'M' in x else (x.strip('€ ')))
-    label = pd.concat([wage, value], axis=1)
-
-    return label
-    
-
-# preprocessing
-def preprocess_player_data():
+def transform_height(x: str):
+    if isinstance(x, str) and "'" in x:
+        f, s = x.split("'", maxsplit=1)
+        return int(f) * 12 + int(s)
+    return int(x)
 
 
-    # 讀取屬性資料
-    csv = pd.read_csv('CompleteDataset.csv', encoding="ISO-8859-1")
-    temp = csv.iloc[:, 0:47]
-    temp = temp.drop(['Name', 'Photo', 'Flag', 'Club Logo', 'Value', 'Wage', 'Unnamed: 0', 'Club','Nationality'], axis=1)
-    temp = temp.apply(lambda x: score(x))
+def transform_Rate(x: str):
+    if x == "High":
+        return 3
+    elif x == "Medium":
+        return 2
+    elif x == "Low":
+        return 1
+    else:
+        print(x)
 
-    # 補上ID欄位
-    ID = csv.iloc[:, 52]
-    temp = pd.concat([temp, ID], axis=1)
 
-    # 補上prefer pos欄位並做one hot encoding
-    prefer = csv.iloc[:, 63]
-    prefer = prefer.T.squeeze().str.split(' ', expand=True).stack()
-    prefer = pd.get_dummies(prefer).groupby(level=0).sum().drop([''], axis=1)
-    df18 = pd.concat([temp, prefer], axis=1)
-    # df18_OneHot = pd.get_dummies(data=df18, columns=['Nationality', ])
-    df18_int = df18.apply(lambda x: stripMonth(x)).set_index('ID')
+def preprocess_fifa18(filename="fifa18.csv"):
+    df = pd.read_csv(filename, header=0, index_col=0)
+    df = df.drop(
+        labels=['ID', 'Name', 'Photo', 'Flag', 'Club Logo', 'Club', 'Nationality', 'CAM', 'CB', 'CDM', 'CF', 'CM',
+                'LAM', 'LB', 'LCB', 'LCM', 'LDM', 'LF', 'LM', 'LS', 'LW', 'LWB', 'RAM', 'RB', 'RCB', 'RCM', 'RDM', 'RF',
+                'RM', 'RS', 'RW', 'RWB', 'ST', 'Preferred Positions'],
+        axis=1
+    )
+    df["Value"] = df["Value"].apply(transform_money)
+    df["Wage"] = df["Wage"].apply(transform_money)
+    df.to_csv(f"pre_{filename}", index=False)
 
-    return df18_int
-    
 
-def preprocess():
-    train = preprocess_player_data()
-    label = process_lable_data()
-    res = pd.merge(label, train, on=['ID'])
-    res.to_csv('train.csv')
-    return res
+def preprocess_fifa19(filename="fifa19.csv"):
+    df = pd.read_csv(filename, header=0, index_col=0)
+    print(df.shape)
+    df = df.drop(
+        labels=['Joined', 'Loaned From', 'Contract Valid Until', 'Real Face', "Photo", "Club", "Club Logo", "Flag",
+                'ID', 'Name', 'Nationality', 'Release Clause', 'Jersey Number',
+                "LS", "ST", "RS", "LW", "LF", "CF", "RF", "RW", "LAM", "CAM", "RAM", "LM", "LCM", "CM", "RCM", "RM",
+                "LWB", "LDM", "CDM", "RDM", "RWB", "LB", "LCB", "CB", "RCB", "RB"],
+        axis=1
+    )
+    df = df.dropna(axis=0)
+    df["Value"] = df["Value"].apply(transform_money)
+    df["Wage"] = df["Wage"].apply(transform_money)
+    df["Weight"] = df["Weight"].apply(
+        lambda x: x.strip("lbs") if isinstance(x, str) and x.endswith("lbs") else x).astype("int32")
+    df["Height"] = df["Height"].apply(transform_height)
+    work_rates = df["Work Rate"].str.split("/", n=1, expand=True)
+    df["Work Rate1"] = work_rates[0].str.strip().apply(transform_Rate)
+    df["Work Rate2"] = work_rates[1].str.strip().apply(transform_Rate)
+    df = df.drop("Work Rate", axis=1)
+    df = pd.get_dummies(df)
+    print(df.shape)
+    df.to_csv(f"pre_{filename}", encoding="utf-8", index=False)
+
 
 if __name__ == '__main__':
-    preprocess()
+    preprocess_fifa18()
+    preprocess_fifa19()
