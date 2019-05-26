@@ -43,7 +43,7 @@ def preprocess_player_data():
     # 讀取屬性資料
     csv = pd.read_csv('CompleteDataset.csv', encoding="ISO-8859-1")
     temp = csv.iloc[:, 0:47]
-    temp = temp.drop(['Name', 'Photo', 'Flag', 'Club Logo', 'Value', 'Wage', 'Unnamed: 0'], axis=1)
+    temp = temp.drop(['Name', 'Photo', 'Flag', 'Club Logo', 'Value', 'Wage', 'Unnamed: 0', 'Club','Nationality'], axis=1)
     temp = temp.apply(lambda x: score(x))
 
     # 補上ID欄位
@@ -55,8 +55,8 @@ def preprocess_player_data():
     prefer = prefer.T.squeeze().str.split(' ', expand=True).stack()
     prefer = pd.get_dummies(prefer).groupby(level=0).sum().drop([''], axis=1)
     df18 = pd.concat([temp, prefer], axis=1)
-    df18_OneHot = pd.get_dummies(data=df18, columns=['Nationality', 'Club', ])
-    df18_int = df18_OneHot.apply(lambda x: stripMonth(x)).set_index('ID')
+    # df18_OneHot = pd.get_dummies(data=df18, columns=['Nationality', ])
+    df18_int = df18.apply(lambda x: stripMonth(x)).set_index('ID')
 
     return df18_int
     

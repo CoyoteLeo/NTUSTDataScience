@@ -1,42 +1,68 @@
-import preprocessing
-
+from preprocessing import preprocess
 from keras import optimizers
 from keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
-from keras.layers import Activation, BatchNormalization, Conv1D, CuDNNGRU, Dense, Dropout, Embedding, Flatten, Input, MaxPooling1D
+from keras.layers import Activation, BatchNormalization, Conv1D, CuDNNGRU, Dense, Dropout, Embedding, Flatten, Input, MaxPooling1D, LeakyReLU
 from keras.models import Sequential
 from sklearn import preprocessing
+import pandas as pd
+from keras import losses
+import numpy as np
+import random
+from keras import regularizers
 
-def Model():
+def Model(attribute_num):
     model = Sequential()
-    model.add(Dense(1024, input_shape=(x_normal.shape[1],)))
-    model.add(Activation('relu'))
-    model.add(Dense(1024))
-    model.add(Activation('relu'))
+    model.add(Dense(512,kernel_initializer='random_uniform', input_shape=(attribute_num,), activity_regularizer=regularizers.l2(0.001)))
+    model.add(BatchNormalization())
+    # model.add(Activation('relu'))
+    model.add(LeakyReLU(alpha=.001))
+    model.add(Dense(256, kernel_initializer='random_uniform', activity_regularizer=regularizers.l2(0.001)))
+    model.add(BatchNormalization())
+    # model.add(Activation('relu'))
+    model.add(LeakyReLU(alpha=.001))
+    model.add(Dense(128, kernel_initializer='random_uniform', activity_regularizer=regularizers.l2(0.001)))
+    model.add(BatchNormalization())
+    # model.add(Activation('relu'))
+    model.add(LeakyReLU(alpha=.001))
+    model.add(Dense(64, kernel_initializer='random_uniform', activity_regularizer=regularizers.l2(0.001)))
+    model.add(BatchNormalization())
+    model.add(LeakyReLU(alpha=.001))
+    # model.add(Activation('relu'))
     model.add(Dense(1))
 
-    model.compile(optimizer='adam',
-                  loss='mse')
+    model.compile(optimizer=optimizers.Adam(lr=1e-2),
+                  loss=losses.mean_absolute_error)
     return model
 
 def loadData():
     train = pd.read_csv('train.csv', encoding="ISO-8859-1")
-    x_data = train.drop(['Wage', 'Value'], axis=1).values
+    x_data = train.drop(['Wage', 'Value','ID'], axis=1).values
     minmax_scale = preprocessing.MinMaxScaler(feature_range=(0, 1))  # Normalize
     x_normal = minmax_scale.fit_transform(x_data)
 
     wage = train['Wage'].values
     value = train['Value'].values
 
-    return x_normal, wage, value
+    new_x = []
+    new_wage = []
+    new_value = []
+    index = np.random.permutation(range(x_data.shape[0]))
+    for i in index:
+        new_x.append(x_normal[i])
+        new_wage.append(wage[i])
+        new_value.append(value[i])
+
+    return np.array(new_x), np.array(new_wage), np.array(new_value)
 
 def main():
+    arr_value = []
 
     train, wage, value = loadData()
 
-    model = Model()
+    model = Model(train.shape[1])
     model.summary()
 
-    save_model_path = 'model.h5'
+    save_model_path = 'model_wage.h5'
     checkpoint = ModelCheckpoint(filepath=save_model_path,
                                  monitor='val_loss',
                                  save_weights_only=True,
@@ -50,9 +76,8 @@ def main():
                                    patience=10,
                                    verbose=1)
 
-    history = model.fit(x=train, y=wage, batch_size=128, epochs=1000, validation_split=0.1,
+    history = model.fit(x=train, y=wage, batch_size=128, epochs=1000, validation_split=0.1, shuffle=True,
                         callbacks=[checkpoint, reduce_lr, early_stopping])
-
 
 if __name__ == '__main__':
     main()
